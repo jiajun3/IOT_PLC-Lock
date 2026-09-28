@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+
+<html class="w-full h-full" lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PLC锁定日志｜设备运维管理后台</title>
+<script src="https://modao.cc/agent-py/static/source/js/tailwindcss.js"></script>
+<script src="https://modao.cc/agent-py/static/source/js/iconify-icon.min.js"></script>
+<style>
+  html, body { height: 100%; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    color: #1f2937;
+  }
+  .scroll-area { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+  .scroll-area::-webkit-scrollbar { width: 8px; height: 8px; }
+  .scroll-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+  .scroll-area::-webkit-scrollbar-track { background: transparent; }
+  .tab-active { color: #1d4ed8; border-color: #2563eb; }
+  table { border-collapse: separate; border-spacing: 0; }
+</style>
+</head>
+<body class="w-full h-full m-0 bg-[#f5f6f8]">
+<!-- 顶部标题条 -->
+<header class="bg-white border-b border-gray-200 px-6 h-14 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-md bg-blue-600 text-white flex items-center justify-center shadow-sm">
+<iconify-icon icon="mdi:factory" width="18"></iconify-icon>
+</div>
+<div class="flex items-baseline gap-2">
+<h1 class="text-[15px] font-semibold text-gray-800 tracking-wide">设备运维管理后台</h1>
+<span class="text-xs text-gray-400">/ 系统日志 / PLC锁定日志</span>
+</div>
+</div>
+<div class="flex items-center gap-4 text-gray-500">
+<button class="w-8 h-8 rounded-md hover:bg-gray-100 flex items-center justify-center" title="消息通知">
+<iconify-icon icon="mdi:bell-outline" width="18"></iconify-icon>
+</button>
+<div class="flex items-center gap-2 pl-4 border-l border-gray-200">
+<div class="w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold flex items-center justify-center">HW</div>
+<span class="text-[13px] text-gray-600">hxy0326</span>
+</div>
+</div>
+</header>
+<!-- 标签页导航 -->
+<nav class="bg-white border-b border-gray-200 px-6">
+<div class="flex items-center gap-8 h-11" id="tabBar">
+<button class="tab-item h-full text-[13px] font-medium text-gray-500 border-b-2 border-transparent hover:text-blue-600 flex items-center gap-1.5" data-tab="操作日志">
+<iconify-icon icon="mdi:clipboard-text-clock-outline" width="16"></iconify-icon>操作日志
+      </button>
+<button class="tab-item h-full text-[13px] font-medium text-gray-500 border-b-2 border-transparent hover:text-blue-600 flex items-center gap-1.5" data-tab="登录日志">
+<iconify-icon icon="mdi:login-variant" width="16"></iconify-icon>登录日志
+      </button>
+<button class="tab-item h-full text-[13px] font-medium text-gray-500 border-b-2 border-transparent hover:text-blue-600 flex items-center gap-1.5" data-tab="请求日志">
+<iconify-icon icon="mdi:swap-horizontal-bold" width="16"></iconify-icon>请求日志
+      </button>
+<button class="tab-item h-full text-[13px] font-medium text-gray-500 border-b-2 border-transparent hover:text-blue-600 flex items-center gap-1.5" data-tab="交互日志">
+<iconify-icon icon="mdi:cursor-default-click-outline" width="16"></iconify-icon>交互日志
+      </button>
+</div>
+</nav>
+<main class="p-6 space-y-4 scroll-area" style="height: calc(100% - 6.25rem); overflow-y: auto;">
+<!-- 筛选区 -->
+<section class="bg-[#f0f2f5] border border-gray-200 rounded-lg p-5">
+<div class="flex flex-wrap items-end gap-x-8 gap-y-4">
+<div class="flex items-center gap-3">
+<label class="text-[13px] text-gray-600 w-16 text-right shrink-0">接口描述:</label>
+<div class="relative w-56">
+<select class="w-full h-9 appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-8 text-[13px] text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" id="fApiDesc">
+<option value="">全部</option>
+<option value="PLC锁定">PLC锁定</option>
+</select>
+<iconify-icon class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" icon="mdi:chevron-down" width="16"></iconify-icon>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<label class="text-[13px] text-gray-600 w-16 text-right shrink-0">操作人:</label>
+<input class="w-56 h-9 bg-white border border-gray-300 rounded-md px-3 text-[13px] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" id="fOperator" placeholder="请输入操作人" type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<label class="text-[13px] text-gray-600 w-16 text-right shrink-0">响应状态:</label>
+<div class="relative w-56">
+<select class="w-full h-9 appearance-none bg-white border border-gray-300 rounded-md pl-3 pr-8 text-[13px] text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" id="fStatus">
+<option value="">全部</option>
+<option value="成功">成功</option>
+<option value="失败">失败</option>
+</select>
+<iconify-icon class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" icon="mdi:chevron-down" width="16"></iconify-icon>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<label class="text-[13px] text-gray-600 w-16 text-right shrink-0">操作时间:</label>
+<div class="flex items-center gap-2">
+<div class="relative">
+<iconify-icon class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" icon="mdi:clock-outline" width="15"></iconify-icon>
+<input class="w-52 h-9 bg-white border border-gray-300 rounded-md pl-8 pr-2 text-[13px] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" id="fStart" placeholder="2026-09-28 00:00:00" type="text"/>
+</div>
+<span class="text-gray-400 text-[13px]">～</span>
+<div class="relative">
+<iconify-icon class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" icon="mdi:clock-outline" width="15"></iconify-icon>
+<input class="w-52 h-9 bg-white border border-gray-300 rounded-md pl-8 pr-2 text-[13px] text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" id="fEnd" placeholder="2026-09-28 23:59:59" type="text"/>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 ml-auto">
+<button class="h-9 px-5 rounded-md bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-[13px] font-medium flex items-center gap-1.5 shadow-sm" id="btnQuery">
+<iconify-icon icon="mdi:magnify" width="16"></iconify-icon>查询
+          </button>
+<button class="h-9 px-5 rounded-md bg-white border border-gray-300 hover:border-blue-400 hover:text-blue-600 text-gray-700 text-[13px] font-medium flex items-center gap-1.5" id="btnReset">
+<iconify-icon icon="mdi:refresh" width="16"></iconify-icon>重置
+          </button>
+</div>
+</div>
+</section>
+<!-- 表格卡片 -->
+<section class="bg-white border border-gray-200 rounded-lg shadow-sm">
+<!-- 工具栏 -->
+<div class="flex items-center justify-between px-5 h-14 border-b border-gray-100">
+<div class="flex items-center gap-2">
+<span class="text-[14px] font-semibold text-gray-800">PLC锁定日志</span>
+<span class="text-[12px] text-gray-400">共 <span id="totalTop">12</span> 条记录</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="h-8 px-3 rounded-md border border-gray-300 hover:border-blue-400 hover:text-blue-600 text-gray-600 text-[13px] flex items-center gap-1.5" id="btnRefresh">
+<iconify-icon icon="mdi:refresh" width="15"></iconify-icon>刷新
+          </button>
+<button class="h-8 px-4 rounded-md bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-[13px] font-medium flex items-center gap-1.5 shadow-sm" id="btnLockPlc">
+<iconify-icon icon="mdi:lock" width="15"></iconify-icon>锁定PLC
+          </button>
+<button class="h-8 px-4 rounded-md bg-white border border-gray-300 hover:border-blue-400 hover:text-blue-600 text-gray-700 text-[13px] font-medium flex items-center gap-1.5" id="btnUnlockPlc">
+<iconify-icon icon="mdi:lock-open-variant-outline" width="15"></iconify-icon>解除锁定
+          </button>
+</div>
+</div>
+<!-- 表格 -->
+<div class="overflow-x-auto scroll-area">
+<table class="w-full min-w-[900px] text-[13px]">
+<thead>
+<tr class="bg-gray-100 text-gray-600">
+<th class="w-20 text-left font-medium px-4 py-2.5 border-b border-gray-200">序号</th>
+<th class="w-56 text-left font-medium px-4 py-2.5 border-b border-gray-200">接口描述</th>
+<th class="w-48 text-left font-medium px-4 py-2.5 border-b border-gray-200">操作人</th>
+<th class="w-40 text-left font-medium px-4 py-2.5 border-b border-gray-200">响应状态</th>
+<th class="text-left font-medium px-4 py-2.5 border-b border-gray-200">操作时间</th>
+</tr>
+</thead>
+<tbody id="tableBody"></tbody>
+</table>
+</div>
+<!-- 空状态 -->
+<div class="hidden flex-col items-center justify-center py-16 text-gray-400" id="emptyState">
+<iconify-icon icon="mdi:clipboard-search-outline" width="42"></iconify-icon>
+<p class="mt-3 text-[13px]">没有符合条件的日志记录，请调整筛选项后重试</p>
+</div>
+<!-- 分页 -->
+<div class="flex items-center justify-between px-5 h-14 border-t border-gray-100">
+<span class="text-[13px] text-gray-500">共 <span id="totalBottom">12</span> 条，每页 10 条</span>
+<div class="flex items-center gap-1.5" id="pager">
+<button class="h-8 px-2.5 rounded border border-gray-300 text-gray-500 text-[13px] hover:border-blue-400 hover:text-blue-600 disabled:opacity-40 disabled:hover:border-gray-300 disabled:hover:text-gray-500" data-page="prev">
+<iconify-icon icon="mdi:chevron-left" width="16"></iconify-icon>
+</button>
+<button class="page-btn h-8 min-w-8 px-2 rounded border text-[13px] border-blue-500 bg-blue-600 text-white" data-page="1">1</button>
+<button class="page-btn h-8 min-w-8 px-2 rounded border text-[13px] border-gray-300 text-gray-600 hover:border-blue-400 hover:text-blue-600" data-page="2">2</button>
+<button class="h-8 px-2.5 rounded border border-gray-300 text-gray-500 text-[13px] hover:border-blue-400 hover:text-blue-600 disabled:opacity-40 disabled:hover:border-gray-300 disabled:hover:text-gray-500" data-page="next">
+<iconify-icon icon="mdi:chevron-right" width="16"></iconify-icon>
+</button>
+</div>
+</div>
+</section>
+<p class="text-[12px] text-gray-400 pb-2">提示：日志数据保留 90 天，支持按接口描述、操作人、响应状态与操作时间范围组合检索。</p>
+</main>
+<!-- 锁定 PLC 确认弹窗 -->
+<div class="hidden fixed inset-0 z-40 items-center justify-center bg-black/40" id="lockModal">
+<div class="w-[480px] bg-white rounded-lg shadow-xl overflow-hidden">
+<div class="flex items-center justify-between px-5 h-12 border-b border-gray-100">
+<span class="text-[14px] font-semibold text-gray-800">停线操作确认</span>
+<button class="text-gray-400 hover:text-gray-600" id="lockModalClose">
+<iconify-icon icon="mdi:close" width="18"></iconify-icon>
+</button>
+</div>
+<div class="px-5 py-5">
+<div class="flex gap-3 rounded-md bg-amber-50 border border-amber-200 px-4 py-3">
+<div class="w-7 h-7 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+<iconify-icon icon="mdi:alert-outline" width="16"></iconify-icon>
+</div>
+<p class="text-[13px] leading-6 text-amber-800">
+            此操作将向 PLC 下发停线控制指令，执行后将导致车间内所有机运线停止运行。该操作将直接影响现场生产，请确认操作无误后输入密码进行验证。
+          </p>
+</div>
+<div class="mt-5">
+<label class="flex items-center gap-1.5 text-[13px] text-gray-700" for="lockPassword">
+<span class="text-red-500">*</span>验证密码
+          </label>
+<div class="relative mt-2">
+<input autocomplete="off" class="w-full h-9 pl-3 pr-10 rounded-md border border-gray-300 text-[13px] text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" id="lockPassword" placeholder="请输入密码" type="password"/>
+<button class="absolute right-0 top-0 h-9 w-9 flex items-center justify-center text-gray-400 hover:text-gray-600" id="lockPwdToggle" title="显示/隐藏密码" type="button">
+<iconify-icon icon="mdi:eye-outline" id="lockPwdToggleIcon" width="16"></iconify-icon>
+</button>
+</div>
+<p class="hidden mt-1.5 text-[12px] text-red-500 items-center gap-1" id="lockPwdError">
+<iconify-icon icon="mdi:alert-circle-outline" width="13"></iconify-icon>请输入密码
+          </p>
+</div>
+</div>
+<div class="px-5 py-3 bg-gray-50 flex justify-end gap-2">
+<button class="h-9 px-4 rounded-md bg-white border border-gray-300 hover:border-gray-400 text-gray-700 text-[13px]" id="lockCancel">取消</button>
+<button class="h-9 px-4 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-medium" id="lockConfirm">确认</button>
+</div>
+</div>
+</div>
+<!-- 解除锁定确认弹窗 -->
+<div class="hidden fixed inset-0 z-40 items-center justify-center bg-black/40" id="unlockModal">
+<div class="w-[480px] bg-white rounded-lg shadow-xl overflow-hidden">
+<div class="flex items-center justify-between px-5 h-12 border-b border-gray-100">
+<span class="text-[14px] font-semibold text-gray-800">解除锁定确认</span>
+<button class="text-gray-400 hover:text-gray-600" id="unlockModalClose">
+<iconify-icon icon="mdi:close" width="18"></iconify-icon>
+</button>
+</div>
+<div class="px-5 py-5">
+<div class="flex gap-3 rounded-md bg-blue-50 border border-blue-200 px-4 py-3">
+<div class="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
+<iconify-icon icon="mdi:lock-open-variant-outline" width="16"></iconify-icon>
+</div>
+<p class="text-[13px] leading-6 text-blue-900">
+            是否确认解除 PLC 锁定？操作完成后车间机运线将恢复运行。
+          </p>
+</div>
+</div>
+<div class="px-5 py-3 bg-gray-50 flex justify-end gap-2">
+<button class="h-9 px-4 rounded-md bg-white border border-gray-300 hover:border-gray-400 text-gray-700 text-[13px]" id="unlockCancel">取消</button>
+<button class="h-9 px-4 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-[13px] font-medium" id="unlockConfirm">确认</button>
+</div>
+</div>
+</div>
+<!-- 轻提示 -->
+<div class="hidden fixed top-5 left-1/2 -translate-x-1/2 z-50 items-center gap-2 px-4 py-2.5 rounded-md bg-gray-900/92 text-white text-[13px] shadow-lg" id="toast">
+<iconify-icon icon="mdi:check-circle-outline" id="toastIcon" width="16"></iconify-icon>
+<span id="toastText">操作成功</span>
+</div>
+<script>
+  const PAGE_SIZE = 10;
+  const ALL_LOGS = [
+    { no: 1, api: 'PLC锁定', operator: 'hxy0326', status: '成功', time: '2026-09-28 13:54:44' },
+    { no: 2, api: 'PLC锁定', operator: 'hxy0326', status: '成功', time: '2026-09-28 10:55:19' },
+    { no: 3, api: 'PLC锁定', operator: 'hxy0114', status: '成功', time: '2026-09-28 10:51:05' },
+    { no: 4, api: 'PLC锁定', operator: 'zhangwei01', status: '失败', time: '2026-09-28 10:50:32' },
+    { no: 5, api: 'PLC锁定', operator: 'liuyang88', status: '成功', time: '2026-09-28 10:50:05' },
+    { no: 6, api: 'PLC锁定', operator: 'hxy0114', status: '成功', time: '2026-09-28 10:49:53' },
+    { no: 7, api: 'PLC锁定', operator: 'chenming_07', status: '成功', time: '2026-09-28 10:34:31' },
+    { no: 8, api: 'PLC锁定', operator: 'sunqi02', status: '失败', time: '2026-09-28 10:34:28' },
+    { no: 9, api: 'PLC锁定', operator: 'zhaolei_dev', status: '成功', time: '2026-09-28 09:47:12' },
+    { no: 10, api: 'PLC锁定', operator: 'wangfang09', status: '成功', time: '2026-09-28 09:22:58' },
+    { no: 11, api: 'PLC锁定', operator: 'zhangwei01', status: '成功', time: '2026-09-28 08:58:04' },
+    { no: 12, api: 'PLC锁定', operator: 'hxy0326', status: '成功', time: '2026-09-28 08:31:40' }
+  ];
+
+  const filters = { api: '', operator: '', status: '', start: '', end: '' };
+  let current = 1;
+  let rows = ALL_LOGS.slice();
+
+  const tbody = document.getElementById('tableBody');
+  const emptyState = document.getElementById('emptyState');
+  const toast = document.getElementById('toast');
+  const toastText = document.getElementById('toastText');
+  const toastIcon = document.getElementById('toastIcon');
+  const pager = document.getElementById('pager');
+  let toastTimer = null;
+
+  function showToast(message, type) {
+    toastText.textContent = message;
+    toastIcon.setAttribute('icon', type === 'error' ? 'mdi:alert-circle-outline' : 'mdi:check-circle-outline');
+    toast.classList.remove('hidden');
+    toast.classList.add('flex');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      toast.classList.add('hidden');
+      toast.classList.remove('flex');
+    }, 2400);
+  }
+
+  function statusCell(status) {
+    if (status === '成功') {
+      return '<span class="text-emerald-600 flex items-center gap-1.5">'
+        + '<iconify-icon icon="mdi:check-circle" width="14"></iconify-icon>成功</span>';
+    }
+    return '<span class="text-red-500 flex items-center gap-1.5">'
+      + '<iconify-icon icon="mdi:close-circle" width="14"></iconify-icon>失败</span>';
+  }
+
+  function render() {
+    const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+    if (current > totalPages) current = totalPages;
+    const start = (current - 1) * PAGE_SIZE;
+    const pageRows = rows.slice(start, start + PAGE_SIZE);
+
+    if (pageRows.length === 0) {
+      tbody.innerHTML = '';
+      emptyState.classList.remove('hidden');
+      emptyState.classList.add('flex');
+    } else {
+      emptyState.classList.add('hidden');
+      emptyState.classList.remove('flex');
+      let html = '';
+      pageRows.forEach(function (row, index) {
+        const zebra = index % 2 === 1 ? 'bg-blue-50/50' : 'bg-white';
+        html += '<tr class="' + zebra + ' hover:bg-blue-100/70 transition-colors">'
+          + '<td class="px-4 py-2.5 text-gray-500 border-b border-gray-100">' + row.no + '</td>'
+          + '<td class="px-4 py-2.5 text-gray-800 border-b border-gray-100"><span class="inline-flex items-center gap-1.5 truncate max-w-[200px]">'
+          + '<iconify-icon icon="mdi:lock-outline" width="14" class="text-blue-500"></iconify-icon>'
+          + '<span class="truncate">' + row.api + '</span></span></td>'
+          + '<td class="px-4 py-2.5 text-gray-700 border-b border-gray-100 truncate max-w-[160px]">' + row.operator + '</td>'
+          + '<td class="px-4 py-2.5 border-b border-gray-100">' + statusCell(row.status) + '</td>'
+          + '<td class="px-4 py-2.5 text-gray-600 border-b border-gray-100 whitespace-nowrap">' + row.time + '</td>'
+          + '</tr>';
+      });
+      tbody.innerHTML = html;
+    }
+
+    document.getElementById('totalTop').textContent = rows.length;
+    document.getElementById('totalBottom').textContent = rows.length;
+
+    pager.querySelectorAll('.page-btn').forEach(function (btn) {
+      const page = Number(btn.getAttribute('data-page'));
+      const active = page === current;
+      btn.classList.toggle('border-blue-500', active);
+      btn.classList.toggle('bg-blue-600', active);
+      btn.classList.toggle('text-white', active);
+      btn.classList.toggle('border-gray-300', !active);
+      btn.classList.toggle('text-gray-600', !active);
+    });
+    pager.querySelector('[data-page="prev"]').disabled = current <= 1;
+    pager.querySelector('[data-page="next"]').disabled = current >= totalPages;
+  }
+
+  function applyFilters() {
+    rows = ALL_LOGS.filter(function (row) {
+      if (filters.api && row.api !== filters.api) return false;
+      if (filters.operator && row.operator.toLowerCase().indexOf(filters.operator.toLowerCase()) === -1) return false;
+      if (filters.status && row.status !== filters.status) return false;
+      if (filters.start && row.time < filters.start) return false;
+      if (filters.end && row.time > filters.end) return false;
+      return true;
+    });
+    current = 1;
+    render();
+  }
+
+  document.getElementById('btnQuery').addEventListener('click', function () {
+    filters.api = document.getElementById('fApiDesc').value;
+    filters.operator = document.getElementById('fOperator').value.trim();
+    filters.status = document.getElementById('fStatus').value;
+    filters.start = document.getElementById('fStart').value.trim();
+    filters.end = document.getElementById('fEnd').value.trim();
+    applyFilters();
+    const parts = [];
+    parts.push('接口描述：' + (filters.api || '全部'));
+    parts.push('操作人：' + (filters.operator || '全部'));
+    parts.push('响应状态：' + (filters.status || '全部'));
+    parts.push('操作时间：' + (filters.start || '不限') + ' ~ ' + (filters.end || '不限'));
+    showToast('查询条件 ' + parts.join('，') + '，共 ' + rows.length + ' 条结果');
+  });
+
+  document.getElementById('btnReset').addEventListener('click', function () {
+    document.getElementById('fApiDesc').value = '';
+    document.getElementById('fOperator').value = '';
+    document.getElementById('fStatus').value = '';
+    document.getElementById('fStart').value = '';
+    document.getElementById('fEnd').value = '';
+    filters.api = '';
+    filters.operator = '';
+    filters.status = '';
+    filters.start = '';
+    filters.end = '';
+    rows = ALL_LOGS.slice();
+    current = 1;
+    render();
+    showToast('筛选条件已重置');
+  });
+
+  document.getElementById('btnRefresh').addEventListener('click', function () {
+    render();
+    showToast('日志列表已刷新');
+  });
+
+  pager.addEventListener('click', function (event) {
+    const btn = event.target.closest('button');
+    if (!btn) return;
+    const value = btn.getAttribute('data-page');
+    const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+    if (value === 'prev' && current > 1) current -= 1;
+    else if (value === 'next' && current < totalPages) current += 1;
+    else if (value !== 'prev' && value !== 'next') current = Number(value);
+    render();
+  });
+
+  const tabBar = document.getElementById('tabBar');
+  tabBar.addEventListener('click', function (event) {
+    const tab = event.target.closest('.tab-item');
+    if (!tab) return;
+    tabBar.querySelectorAll('.tab-item').forEach(function (item) {
+      item.classList.remove('tab-active', 'text-blue-700');
+      item.classList.add('text-gray-500');
+    });
+    tab.classList.add('tab-active', 'text-blue-700');
+    tab.classList.remove('text-gray-500');
+    const name = tab.getAttribute('data-tab');
+    if (name !== '操作日志') showToast('“' + name + '”为演示页签，当前仅展示操作日志数据');
+  });
+
+  const lockModal = document.getElementById('lockModal');
+  const lockPassword = document.getElementById('lockPassword');
+  const lockPwdError = document.getElementById('lockPwdError');
+  const lockPwdToggle = document.getElementById('lockPwdToggle');
+  const lockPwdToggleIcon = document.getElementById('lockPwdToggleIcon');
+
+  function resetLockForm() {
+    lockPassword.value = '';
+    lockPassword.type = 'password';
+    lockPwdToggleIcon.setAttribute('icon', 'mdi:eye-outline');
+    lockPwdError.classList.add('hidden');
+    lockPwdError.classList.remove('flex');
+  }
+
+  function openModal() {
+    resetLockForm();
+    lockModal.classList.remove('hidden');
+    lockModal.classList.add('flex');
+    lockPassword.focus();
+  }
+  function closeModal() {
+    lockModal.classList.add('hidden');
+    lockModal.classList.remove('flex');
+    resetLockForm();
+  }
+
+  document.getElementById('btnLockPlc').addEventListener('click', openModal);
+  document.getElementById('lockModalClose').addEventListener('click', closeModal);
+  document.getElementById('lockCancel').addEventListener('click', closeModal);
+  lockModal.addEventListener('click', function (event) {
+    if (event.target === lockModal) closeModal();
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && !lockModal.classList.contains('hidden')) closeModal();
+  });
+  lockPwdToggle.addEventListener('click', function () {
+    const show = lockPassword.type === 'password';
+    lockPassword.type = show ? 'text' : 'password';
+    lockPwdToggleIcon.setAttribute('icon', show ? 'mdi:eye-off-outline' : 'mdi:eye-outline');
+  });
+  lockPassword.addEventListener('input', function () {
+    if (lockPassword.value.trim()) {
+      lockPwdError.classList.add('hidden');
+      lockPwdError.classList.remove('flex');
+    }
+  });
+  document.getElementById('lockConfirm').addEventListener('click', function () {
+    if (!lockPassword.value.trim()) {
+      lockPwdError.classList.remove('hidden');
+      lockPwdError.classList.add('flex');
+      lockPassword.focus();
+      return;
+    }
+    closeModal();
+    const now = new Date();
+    const pad = function (n) { return String(n).padStart(2, '0'); };
+    const stamp = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate())
+      + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+    ALL_LOGS.unshift({
+      no: ALL_LOGS.length + 1,
+      api: 'PLC锁定',
+      operator: 'hxy0326',
+      status: '成功',
+      time: stamp
+    });
+    ALL_LOGS.forEach(function (row, index) { row.no = index + 1; });
+    document.getElementById('btnReset').click();
+    showToast('PLC 已锁定，锁定记录已写入日志');
+  });
+
+  const unlockModal = document.getElementById('unlockModal');
+
+  function openUnlockModal() {
+    unlockModal.classList.remove('hidden');
+    unlockModal.classList.add('flex');
+  }
+  function closeUnlockModal() {
+    unlockModal.classList.add('hidden');
+    unlockModal.classList.remove('flex');
+  }
+
+  document.getElementById('btnUnlockPlc').addEventListener('click', openUnlockModal);
+  document.getElementById('unlockModalClose').addEventListener('click', closeUnlockModal);
+  document.getElementById('unlockCancel').addEventListener('click', closeUnlockModal);
+  unlockModal.addEventListener('click', function (event) {
+    if (event.target === unlockModal) closeUnlockModal();
+  });
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape' && !unlockModal.classList.contains('hidden')) closeUnlockModal();
+  });
+  document.getElementById('unlockConfirm').addEventListener('click', function () {
+    closeUnlockModal();
+    const now = new Date();
+    const pad = function (n) { return String(n).padStart(2, '0'); };
+    const stamp = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate())
+      + ' ' + pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+    ALL_LOGS.unshift({
+      no: ALL_LOGS.length + 1,
+      api: 'PLC锁定',
+      operator: 'hxy0326',
+      status: '成功',
+      time: stamp
+    });
+    ALL_LOGS.forEach(function (row, index) { row.no = index + 1; });
+    document.getElementById('btnReset').click();
+    showToast('PLC 已解除锁定');
+  });
+
+  // 初始化：默认选中「操作日志」
+  tabBar.querySelector('[data-tab="操作日志"]').classList.add('tab-active', 'text-blue-700');
+  tabBar.querySelector('[data-tab="操作日志"]').classList.remove('text-gray-500');
+  render();
+</script>
+</body>
+</html>
